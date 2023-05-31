@@ -17,4 +17,43 @@ foodie_fi.subscriptions),1)
 from foodie_fi.subscriptions 
 where plan_id=4
 
-5.
+
+5.How many customers have churned straight after their initial free trial - what percentage is this rounded to the nearest whole number?
+Ans:with a as (SELECT * FROM foodie_fi.subscriptions where plan_id=4)
+  select distinct count(*),round(count(*) *100/(select count(*) from foodie_fi.subscriptions),0)
+  from a inner join (SELECT * FROM foodie_fi.subscriptions where plan_id=0) as b on
+  a.customer_id=b.customer_id where a.start_date between b.start_date and b.start_date+ interval 7 day
+
+
+
+
+
+6.What is the number and percentage of customer plans after their
+ initial free trial?
+Ans:with a as (SELECT * FROM foodie_fi.subscriptions where plan_id!=4)
+  select distinct count(*),round(count(*) *100/(select count(*) from foodie_fi.subscriptions),0)
+  from a inner join (SELECT * FROM foodie_fi.subscriptions where plan_id=0) as b on
+  a.customer_id=b.customer_id where a.start_date>b.start_date+ interval 7 day
+  
+ 7.What is the customer count and percentage breakdown of all 5 plan_name values at 2020-12-31?
+ Ans:
+ select plan_name,count(customer_id) as count,
+round(count(customer_id)*100/( select count(customer_id) from foodie_fi.subscriptions 
+ where start_date<='2020-12-31'),1) as percentage 
+from foodie_fi.subscriptions  as s right join foodie_fi.plans as p on 
+p.plan_id=s.plan_id where s.start_date<='2020-12-31' group by plan_name
+  
+8.How many customers have upgraded to an annual plan in 2020?
+Ans:
+select count(*) from foodie_fi.subscriptions where plan_id=3 and year(start_date)='2020'
+
+
+9.How many days on average does it take for a customer to an annual plan from the day they 
+join Foodie-Fi?
+with c as (with  b as(select distinct s.customer_id,s.start_date as join_date,a.start_date as annal_date from foodie_fi.subscriptions  as s join (select * from foodie_fi.subscriptions where plan_id=0) as a on
+a.customer_id=s.customer_id
+where s.plan_id=3)
+select *,datediff(join_date,annal_date) as diff from b )
+select round(avg(diff),0) as avg_day from c
+
+10.
