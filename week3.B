@@ -56,4 +56,18 @@ where s.plan_id=3)
 select *,datediff(join_date,annal_date) as diff from b )
 select round(avg(diff),0) as avg_day from c
 
-10.
+10.Can you further breakdown this average value into 30 day periods (i.e. 0-30 days, 31-60 days etc)
+Ans:with annal as(select customer_id,start_date  as annal_day  from foodie_fi.subscriptions where plan_id=3),
+ trail as (select customer_id,start_date as tril_day from foodie_fi.subscriptions where plan_id=0),
+ day_period  as
+ (select datediff(annal_day,tril_day) as diff from  annal  join trail on trail.customer_id=annal.customer_id 
+where  annal_day is not null ),
+bins as (select *,floor(diff/30) as bins from day_period)
+select  concat((bins*30)+1,'_',(bins+1)*30,'days') as days,count(diff) as total from bins group by bins order by bins
+
+11.How many customers downgraded from a pro monthly to a basic monthly plan in 2020?
+Ans:with dpro as(select * from foodie_fi.subscriptions where plan_id=2),
+ basic as( select * from foodie_fi.subscriptions where plan_id=1) 
+ select count(basic.customer_id) from dpro join basic on dpro.customer_id=basic.customer_id where dpro.start_date<basic.start_date
+
+
