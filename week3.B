@@ -71,3 +71,39 @@ Ans:with dpro as(select * from foodie_fi.subscriptions where plan_id=2),
  select count(basic.customer_id) from dpro join basic on dpro.customer_id=basic.customer_id where dpro.start_date<basic.start_date
 
 
+
+
+C. Challenge Payment Question
+The Foodie-Fi team wants you to create a new payments table for the year 2020 that includes amounts paid by each customer in the subscriptions table with the following requirements:
+
+monthly payments always occur on the same day of month as the original start_date of any monthly paid plan
+upgrades from basic to monthly or pro plans are reduced by the current paid amount in that month and start immediately
+upgrades from pro monthly to pro annual are paid at the end of the current billing period and also starts at the end of the month period
+once a customer churns they will no longer make payments
+Ans:ITH cte AS (
+  SELECT
+    s.customer_id,s.plan_id,
+    p.plan_name,
+    p.price,
+    s.start_date,
+    YEAR(s.start_date) AS start_year,
+    LEAD(s.start_date) OVER (PARTITION BY s.customer_id ORDER BY s.start_date, s.plan_id) AS next_start_date
+  FROM
+    foodie_fi.subscriptions AS s
+    INNER JOIN foodie_fi.plans AS p ON p.plan_id = s.plan_id
+  WHERE
+    s.plan_id NOT IN (0, 4)
+    AND YEAR(s.start_date) = 2020
+),
+cte_count AS (
+  SELECT
+    cte.*,
+    ROW_NUMBER() OVER (PARTITION BY cte.customer_id ORDER BY cte.start_date, cte.plan_id) AS row_num
+  FROM
+    cte
+)
+SELECT
+  cte_count.*,
+  (SELECT COUNT(*) FROM cte_count sub WHERE sub.customer_id = cte_count.customer_id AND sub.row_num <= cte_count.row_num) AS cumulative_count
+FROM
+  cte_count;
