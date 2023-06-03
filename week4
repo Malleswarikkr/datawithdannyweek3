@@ -1,0 +1,31 @@
+1.How many unique nodes are there on the Data Bank system?
+Ans:select count(distinct node_id) from data_bank.customer_nodes
+
+2./*What is the number of nodes per region?
+*/
+Ans:select region_name,count(cn.node_id)  as count from data_bank.customer_nodes as cn join data_bank.regions
+ as r on r.region_id=cn.region_id group by region_name
+ 
+3./*How many customers are allocated to each region?*/
+select region_name,count(distinct cn.customer_id)  as count from data_bank.customer_nodes as cn join data_bank.regions
+ as r on r.region_id=cn.region_id group by region_name
+ 
+4./*How many days on average are customers reallocated to a different node?
+*/
+Ans:select  avg(end_date-start_date) as days from data_bank.customer_nodes 
+ where end_date!='9999-12-31' 
+ 
+ 5./*What is the median, 80th and 95th percentile for this same reallocation days metric for each region?
+Ans:WITH a AS (
+  SELECT cn.*, region_name, (end_date - start_date) as days
+  FROM data_bank.customer_nodes AS cn
+  JOIN data_bank.regions AS r ON r.region_id = cn.region_id
+  WHERE end_date != '9999-12-31'
+)
+SELECT  region_name,
+  MIN(CASE WHEN percentile_rank >= 0.5 THEN days END) AS 50th_percentile_date,
+  MIN(CASE WHEN percentile_rank >= 0.8 THEN days END) AS 80th_percentile_date,
+  MIN(CASE WHEN percentile_rank >= 0.9 THEN days END) AS 90th_percentile_date
+FROM  (SELECT region_name, days,
+      PERCENT_RANK() OVER (PARTITION BY region_name ORDER BY days) AS percentile_rank
+    FROM  a ) AS subquery GROUP BY region_name;
